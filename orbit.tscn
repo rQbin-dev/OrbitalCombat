@@ -1,0 +1,7 @@
+[gd_scene load_steps=2 format=3 uid="uid://rm2ugmn40wrq"]
+
+[ext_resource type="Script" path="res://orbit.cs" id="1_eekca"]
+
+[node name="Line2D" type="Line2D"]
+points = PackedVector2Array(633, 148)
+script = ExtResource("1_eekca")
