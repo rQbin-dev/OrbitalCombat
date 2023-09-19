@@ -7,7 +7,7 @@ using System.Linq;
 public partial class OrbitalPath : Node
 {
 
-	private Orbit.OrbitalParameters _parameters;
+	private Orbit.OrbitalParameters _orbit;
 
 	[ExportCategory("Orbit Visualization")]
 	[Export] public int LineSteps = 100;
@@ -31,7 +31,7 @@ public partial class OrbitalPath : Node
 		previousPosition = InitialPosition;
 		previousVelocity = InitialVelocity;
 
-		_parameters = _parameters.GetOrbitalParameters(InitialPosition, InitialVelocity, sizeUnit);
+		_orbit = OrbitalParameters.From(InitialPosition, InitialVelocity, sizeUnit);
 		DrawInitialState();
 		DrawOrbit();
 	}
@@ -44,7 +44,7 @@ public partial class OrbitalPath : Node
 	{
 		if (previousPosition != InitialPosition || previousVelocity != InitialVelocity)
 		{
-			_parameters = _parameters.GetOrbitalParameters(InitialPosition, InitialVelocity, sizeUnit);
+			_orbit = OrbitalParameters.From(InitialPosition, InitialVelocity, sizeUnit);
 			previousVelocity = InitialVelocity;
 			previousPosition = InitialPosition;
 			DrawOrbit();
@@ -52,10 +52,6 @@ public partial class OrbitalPath : Node
 
 
 		_currentTime += delta;
-
-		//Vector3 curPosition = sizeUnit * OrbitalParameters.GetPointOnOrbit(_currentTime, _parameters);
-
-		
 	}
 
 
@@ -78,8 +74,7 @@ public partial class OrbitalPath : Node
 		for (int i = 0; i < LineSteps; i++)
 		{
 			double time = (double)i / LineSteps;
-			Vector3 point_other = _parameters.calculatePointInOrbit(time);
-
+			Vector3 point_other = _orbit.calculatePointAtTime(time * Math.PI * 2);
 
 			points.Add(point_other);
 		}
@@ -89,6 +84,26 @@ public partial class OrbitalPath : Node
 			 MeshInstance3D line = _Draw3D.Call("line", points[i], points[i + 1]).As<MeshInstance3D>();
 			_lines.Add(line);
 		}
+
+
+		double t_peri = _orbit.getTimeInOrbit(0);
+		double t_apo = _orbit.getTimeInOrbit(Math.PI);
+
+		Vector3 periapsis = _orbit.calculatePointAt(0);
+		Vector3 apoapsis = _orbit.calculatePointAt(Math.PI);
+
+		Vector3 periapsis1 = _orbit.calculatePointAtTime(t_peri);
+		Vector3 apoapsis1 = _orbit.calculatePointAtTime(t_apo);
+
+		GD.PrintS(apoapsis, ":", apoapsis1);
+
+		//periapsis
+		MeshInstance3D periapsisPoint = _Draw3D.Call("point", periapsis, 0.1, Colors.Blue).As<MeshInstance3D>();
+		_points.Add(periapsisPoint);
+
+		//apoapsis
+		MeshInstance3D apoapsisPoint = _Draw3D.Call("point", apoapsis, 0.1, Colors.Red).As<MeshInstance3D>();
+		_points.Add(apoapsisPoint);
 	}
 
 	private void ClearOrbit()
