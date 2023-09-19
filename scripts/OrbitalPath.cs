@@ -87,7 +87,7 @@ public partial class OrbitalPath : Node
 		for(int i = 0; i < points.Count - 2; i++)
 		{
 			 MeshInstance3D line = _Draw3D.Call("line", points[i], points[i + 1]).As<MeshInstance3D>();
-			_lines.Append(line);
+			_lines.Add(line);
 		}
 	}
 

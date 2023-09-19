@@ -21,14 +21,14 @@ omni_range = 16.211
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.00435829, -0.0334353, 0.010973)
 LineSteps = 10000
 sizeUnit = 0.399
-InitialPosition = Vector3(10, 50, 70)
-InitialVelocity = Vector3(0.03, 0.005, 0.05)
+InitialPosition = Vector3(10, 0, 0)
+InitialVelocity = Vector3(0.03, 0.04, 0.176)
 
 [node name="SmEnvPlanet14" type="MeshInstance3D" parent="."]
 mesh = SubResource("SphereMesh_ta20m")
 
 [node name="SmEnvPlanet15" type="MeshInstance3D" parent="."]
-transform = Transform3D(0.465, 0, 0, 0, 0.465, 0, 0, 0, 0.465, 10, 50, 70)
+transform = Transform3D(0.465, 0, 0, 0, 0.465, 0, 0, 0, 0.465, 10, 0, 0)
 mesh = SubResource("SphereMesh_ta20m")
 
 [node name="Marker3D" type="Marker3D" parent="."]

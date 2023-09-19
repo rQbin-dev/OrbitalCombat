@@ -1,6 +1,5 @@
 using Godot;
 using System;
-
 namespace Orbit
 {
 
@@ -39,17 +38,14 @@ namespace Orbit
 
 	public struct OrbitalParameters
 	{
-		public const float GRAVITANIONAL_CONSTANT = 1.0f;
-		/**/
 		public double SemiMajorAxis;
 		public double Eccentricity;
 		public double Inclination;
 		public double RightAscensionOfAscendingNode;
 		public double ArgumentOfPeriapsis;
 		public double TrueAnomaly;
-		public double LongitudeOfPeriapsis;
 
-		public OrbitalParameters(double a, double e, double i, double W, double w, double v, double pi)
+		public OrbitalParameters(double a, double e, double i, double W, double w, double v)
 		{
 			SemiMajorAxis = a;
 			Eccentricity = e;
@@ -57,7 +53,6 @@ namespace Orbit
 			RightAscensionOfAscendingNode = W;
 			ArgumentOfPeriapsis = w;
 			TrueAnomaly = v;
-			LongitudeOfPeriapsis = pi;
 		}
 
 		
@@ -71,6 +66,11 @@ namespace Orbit
 			// P Q are the coordinates on the 2d plane of the orbit
 			double P = SemiMajorAxis * (Math.Cos(eccentricAnomaly) - Eccentricity);
 			double Q = SemiMajorAxis * Math.Sin(eccentricAnomaly) * Math.Sqrt(1 - Math.Pow(Eccentricity, 2));
+            // TODO: Remove
+            if (timeSeconds == 0)
+			{
+				GD.PrintErr(P, " , ", Q);
+			}
 
 			double x, y, z;
 
@@ -79,6 +79,8 @@ namespace Orbit
 			// rotate by argument of periapsis
 			x = Math.Cos(ArgumentOfPeriapsis) * P - Math.Sin(ArgumentOfPeriapsis) * Q;
 			y = Math.Sin(ArgumentOfPeriapsis) * P + Math.Cos(ArgumentOfPeriapsis) * Q;
+
+			// TODO: Remove
 			if (timeSeconds == 0)
 			{
 				GD.PrintErr("after argument of periapsis: ", new Vector3((float)x, (float)y, 0));
@@ -87,8 +89,8 @@ namespace Orbit
 			// rotate by inclination
 			z = Math.Sin(Inclination) * y;
 			y = Math.Cos(Inclination) * y;
-
-			if (timeSeconds == 0)
+            // TODO: Remove
+            if (timeSeconds == 0)
 			{
 				GD.PrintErr("after inclination: ", new Vector3((float)x, (float)y, 0));
 			}
@@ -100,8 +102,8 @@ namespace Orbit
 				x = Math.Cos(RightAscensionOfAscendingNode) * xtemp - Math.Sin(RightAscensionOfAscendingNode) * y;
 				y = Math.Sin(RightAscensionOfAscendingNode) * xtemp + Math.Cos(RightAscensionOfAscendingNode) * y;
 			}
-
-			if(timeSeconds == 0)
+            // TODO: Remove
+            if (timeSeconds == 0)
 			{
 				GD.PrintS(meanAnomaly, eccentricAnomaly, P, Q);
 				GD.PrintErr(new Vector3((float)x, (float)y, (float)z));
@@ -113,85 +115,69 @@ namespace Orbit
 
 		
 
-		public static Vector3 GetPointOnOrbit(double timeSeconds, OrbitalParameters parameters)
-		{
-			double meanAnomaly = 2.0 * Math.PI * timeSeconds;
-
-			//solve the eccentric anomaly with the newton-raphson method
-			double eccentricAnomaly = Kepler.SolveKepler(meanAnomaly, parameters.Eccentricity);
-
-			double nu = 2 * Math.Atan(Math.Sqrt((1 + parameters.Eccentricity) / 1 - parameters.Eccentricity) * Math.Tan(eccentricAnomaly / 2));
-
-			//4
-			double r = parameters.SemiMajorAxis * (1 - parameters.Eccentricity * Math.Cos(parameters.TrueAnomaly));
-			//5
-			double h = Math.Sqrt(GRAVITANIONAL_CONSTANT * parameters.SemiMajorAxis * (1 - (parameters.Eccentricity * parameters.Eccentricity)));
-			//6
-			double Om = parameters.RightAscensionOfAscendingNode;
-			double w = parameters.ArgumentOfPeriapsis;
-
-			double X = r * (Math.Cos(Om) * Math.Cos(w + nu) - Math.Sin(Om) * Math.Sin(w + nu) * Math.Cos(parameters.Inclination));
-			double Y = r * (Math.Sin(Om) * Math.Cos(w + nu) + Math.Cos(Om) * Math.Sin(w + nu) * Math.Cos(parameters.Inclination));
-			double Z = r * (Math.Sin(parameters.Inclination) * Math.Sin(w + nu));
-
-			return new((float)X, (float)Y, (float)Z);
-		}
+	
 
 		public OrbitalParameters GetOrbitalParameters(Vector3 position, Vector3 velocity, float mu)
 		{
-			double semiMajorAxis, eccentricity, inclination, ascAscendingNode, argumentPeriapsis, trueAnomaly, longitudeOfPeriapsis;
 
-			double angularMomentum;
-
-			double radialVelocity = velocity.Dot(position.Normalized());
-
-
-			Vector3 angularMomentum_vec = position.Cross(velocity);
-			angularMomentum = angularMomentum_vec.Length();
+            double semiMajorAxis;
+            double eccentricityLength;
+            double inclination;
+            double ascAscendingNode;
+            double argumentPeriapsis;
+            double trueAnomaly;
 
 
-			inclination = Math.Acos(angularMomentum_vec.Z / angularMomentum);
+            Vector3 angularMomentum = position.Cross(velocity);
+            Vector3 normal = Vector3.Back.Cross(angularMomentum);
+            double angularMomentumLength = angularMomentum.Length();
+            double semiLatusRectum = (angularMomentumLength * angularMomentumLength) / mu;
 
-			Vector3 normal = Vector3.Back.Cross(angularMomentum_vec);
-			ascAscendingNode = CalculateRightAscensionOfAscendingNode(angularMomentum_vec);
 
-			Vector3 eccentricity_vec = velocity.Cross(angularMomentum_vec) / mu - position / position.Length();
-			eccentricity = eccentricity_vec.Length();
+            inclination = CalculateInclination(angularMomentum, angularMomentumLength);
 
-			double p = (angularMomentum * angularMomentum) / mu;
-			semiMajorAxis = (eccentricity == 1) ? double.PositiveInfinity : p / (1 - (eccentricity * eccentricity));
+			ascAscendingNode = CalculateRightAscensionOfAscendingNode(normal, angularMomentum);
+		
+			Vector3 eccentricity_vec = CalculateEccentricityVector(angularMomentum, position, velocity, mu);
+			eccentricityLength = eccentricity_vec.Length();
 
+			semiMajorAxis = CalculateSemiMajorAxis(eccentricityLength, semiLatusRectum);
 
 			argumentPeriapsis = CalculateArgumentOfPeriapsis(normal, eccentricity_vec);
 
+			trueAnomaly = CalculateTrueAnomaly(mu, semiLatusRectum, position, velocity);
 
-			trueAnomaly = CalculateTrueAnomaly(mu, p, position, velocity);
 
-			longitudeOfPeriapsis = CalculateLongitudeOfPeriapsis(eccentricity_vec, eccentricity, inclination);
-
-			GD.PrintS(semiMajorAxis, eccentricity, inclination * (180 / Math.PI), ascAscendingNode * (180 / Math.PI), argumentPeriapsis * (180 / Math.PI), trueAnomaly * (180 / Math.PI), longitudeOfPeriapsis * (180 / Math.PI));
-
-			return new OrbitalParameters(semiMajorAxis, eccentricity, inclination, ascAscendingNode, argumentPeriapsis, trueAnomaly, longitudeOfPeriapsis);
+			GD.PrintS(semiMajorAxis, eccentricityLength, "(", eccentricity_vec, ")", inclination * (180 / Math.PI), ascAscendingNode * (180 / Math.PI), argumentPeriapsis * (180 / Math.PI), trueAnomaly * (180 / Math.PI));
+			
+			return new OrbitalParameters(semiMajorAxis, eccentricityLength, inclination, ascAscendingNode, argumentPeriapsis, trueAnomaly);
 		}
 
-		private static Vector3 CalculateEccentricityVector(Vector3 position, Vector3 velocity, float mu)
+		private static double CalculateInclination(Vector3 H, double h)
 		{
-			Vector3 part1 = (velocity.LengthSquared() - mu / position.Length()) * position;
-			Vector3 part2 = position.Dot(velocity) * velocity;
+			return Math.Acos(H.Z / h);
+        }
 
-			return (part1 - part2) / mu;
-		}
-
-		private static double CalculateRightAscensionOfAscendingNode(Vector3 h)
+		private static double CalculateRightAscensionOfAscendingNode(Vector3 n, Vector3 h)
 		{
-			return (2 * Math.PI + Math.Atan2(h.X, -h.Y)) % (2 * Math.PI);
+			if (n.IsEqualApprox(Vector3.Zero)) return double.NaN;
+            return (2.0 * Math.PI + Math.Atan2(h.X, -h.Y)) % (2 * Math.PI);
+        }
+
+		private static Vector3 CalculateEccentricityVector(Vector3 h, Vector3 r, Vector3 v, float mu)
+		{
+			return v.Cross(h) / mu - r.Normalized();
 		}
+
+		private static double CalculateSemiMajorAxis(double e_length, double p)
+		{
+			return (e_length == 1) ? double.PositiveInfinity : p / (1 - (e_length * e_length));
+        }
 
 		private static double CalculateArgumentOfPeriapsis(Vector3 normal, Vector3 eccentricity)
 		{
 			float ne_length = normal.Length() * eccentricity.Length();
 
-			GD.PrintS(normal, eccentricity, "=> acos", normal.Dot(eccentricity), "/", ne_length, " = ", Math.Acos(normal.Dot(eccentricity) / ne_length) * (180 / Math.PI));
 			double w;
 			//on equatorial orbits assume that:
 			if (ne_length == 0) 
@@ -199,25 +185,13 @@ namespace Orbit
 			else 
 				w = Math.Acos(normal.Dot(eccentricity) / ne_length);
 
-			return (eccentricity.Z < 0) ? 2.0 * Math.PI - w : w;
+			return (eccentricity.Z <= 0) ? 2.0 * Math.PI - w : w;
 		}
 
 
 		private static double CalculateTrueAnomaly(double mu, double p, Vector3 position, Vector3 velocity)
 		{
-			return (2 * Math.PI + Math.Atan2(Math.Sqrt(p / mu) * velocity.Dot(position), p - position.Length())) % (2 * Math.PI);
-		}
-		private static double CalculateLongitudeOfPeriapsis(Vector3 e, double e_length, double i)
-		{
-
-			if (e_length == 0) { return double.NaN; }
-
-			if ((e.Y < 0 && i >= 0 && i <= 90) || (e.Y > 0 && i > 90))
-			{
-				return 2 * Math.PI - Math.Acos(e.X / e.Length());
-			}
-
-			return Math.Acos(e.X / e.Length());
+			return (2.0 * Math.PI + Math.Atan2(Math.Sqrt(p / mu) * velocity.Dot(position), p - position.Length())) % (2 * Math.PI);
 		}
 	}
 
