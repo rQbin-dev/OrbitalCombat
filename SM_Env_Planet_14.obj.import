@@ -1,0 +1,21 @@
+[remap]
+
+importer="wavefront_obj"
+importer_version=1
+type="Mesh"
+uid="uid://cvsrttfdjf4hu"
+path="res://.godot/imported/SM_Env_Planet_14.obj-843a31f089be5ed0f71afd4d7fd14a4b.mesh"
+
+[deps]
+
+files=["res://.godot/imported/SM_Env_Planet_14.obj-843a31f089be5ed0f71afd4d7fd14a4b.mesh"]
+
+source_file="res://SM_Env_Planet_14.obj"
+dest_files=["res://.godot/imported/SM_Env_Planet_14.obj-843a31f089be5ed0f71afd4d7fd14a4b.mesh", "res://.godot/imported/SM_Env_Planet_14.obj-843a31f089be5ed0f71afd4d7fd14a4b.mesh"]
+
+[params]
+
+generate_tangents=true
+scale_mesh=Vector3(0.001, 0.001, 0.001)
+offset_mesh=Vector3(0, 0, 0)
+optimize_mesh=true

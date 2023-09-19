@@ -1,0 +1,13 @@
+[gd_scene load_steps=3 format=3 uid="uid://brgxdxe5juoik"]
+
+[ext_resource type="Script" path="res://scripts/OrbitalPath.cs" id="1_yyy26"]
+[ext_resource type="Script" path="res://scripts/Draw3D/Draw3D.gd" id="2_q28tp"]
+
+[node name="Node3D" type="Node3D" node_paths=PackedStringArray("_Draw3D")]
+script = ExtResource("1_yyy26")
+InitialPosition = Vector3(-2, -1.6, 0)
+InitialVelocity = Vector3(0, -0.7, 0)
+_Draw3D = NodePath("Path")
+
+[node name="Path" type="Node" parent="."]
+script = ExtResource("2_q28tp")
