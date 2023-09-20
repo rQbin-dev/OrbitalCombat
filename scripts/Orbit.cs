@@ -92,7 +92,8 @@ namespace Orbit
 		
 		public Vector3 calculatePointAtTime(double timeSeconds)
 		{
-			double meanAnomaly = 2.0 * Math.PI * timeSeconds;
+
+			double meanAnomaly = Math.Sqrt(GravitationConstant / Math.Pow(SemiMajorAxis, 3)) * timeSeconds;
 
 			//solve the eccentric anomaly with the newton-raphson method
 			double eccentricAnomaly = Kepler.SolveKepler(meanAnomaly, Eccentricity);

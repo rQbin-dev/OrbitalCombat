@@ -3,7 +3,7 @@ using Godot.Collections;
 using Orbit;
 using System;
 using System.Linq;
-
+[Tool]
 public partial class OrbitalPath : Node
 {
 
@@ -18,7 +18,7 @@ public partial class OrbitalPath : Node
 	[Export] public Vector3 InitialPosition;
 	[Export] public Vector3 InitialVelocity;
 
-	[Export] public Marker3D _marker;
+	[Export] public Node3D _body;
 
 	[Export] public Node _Draw3D;
 
@@ -26,12 +26,21 @@ public partial class OrbitalPath : Node
 	private Array<MeshInstance3D> _points = new();
 	private Array<MeshInstance3D> _lines = new();
 
+
+	private double _currentTime = 0;
 	public override void _Ready()
 	{
 		previousPosition = InitialPosition;
 		previousVelocity = InitialVelocity;
 
 		_orbit = OrbitalParameters.From(InitialPosition, InitialVelocity, sizeUnit);
+
+
+		double ea = 2 * Math.Atan(Math.Sqrt((1 - _orbit.Eccentricity) / (1 + _orbit.Eccentricity)) * Math.Tan(_orbit.TrueAnomaly / 2));
+
+		_currentTime = _orbit.getTimeInOrbit(ea);
+
+
 		DrawInitialState();
 		DrawOrbit();
 	}
@@ -39,7 +48,7 @@ public partial class OrbitalPath : Node
 	private Vector3 previousVelocity;
 	private Vector3 previousPosition;
 
-	private double _currentTime = 0;
+	
 	public override void _Process(double delta)
 	{
 		if (previousPosition != InitialPosition || previousVelocity != InitialVelocity)
@@ -51,16 +60,20 @@ public partial class OrbitalPath : Node
 		}
 
 
+		if (Engine.IsEditorHint()) return;
+
 		_currentTime += delta;
+
+		_body.Position = _orbit.calculatePointAtTime(_currentTime);
 	}
 
 
 	private void DrawInitialState()
 	{
-		if (_marker == null) return;
+		if (_body == null) return;
 
-		_marker.Position = InitialPosition;
-		_marker.Scale = InitialVelocity;
+		_body.Position = InitialPosition;
+		//_body.Scale = InitialVelocity;
 	}
 
 
@@ -74,7 +87,7 @@ public partial class OrbitalPath : Node
 		for (int i = 0; i < LineSteps; i++)
 		{
 			double time = (double)i / LineSteps;
-			Vector3 point_other = _orbit.calculatePointAtTime(time * Math.PI * 2);
+			Vector3 point_other = _orbit.calculatePointAt(time * Math.PI * 2);
 
 			points.Add(point_other);
 		}
@@ -86,16 +99,9 @@ public partial class OrbitalPath : Node
 		}
 
 
-		double t_peri = _orbit.getTimeInOrbit(0);
-		double t_apo = _orbit.getTimeInOrbit(Math.PI);
 
 		Vector3 periapsis = _orbit.calculatePointAt(0);
 		Vector3 apoapsis = _orbit.calculatePointAt(Math.PI);
-
-		Vector3 periapsis1 = _orbit.calculatePointAtTime(t_peri);
-		Vector3 apoapsis1 = _orbit.calculatePointAtTime(t_apo);
-
-		GD.PrintS(apoapsis, ":", apoapsis1);
 
 		//periapsis
 		MeshInstance3D periapsisPoint = _Draw3D.Call("point", periapsis, 0.1, Colors.Blue).As<MeshInstance3D>();
